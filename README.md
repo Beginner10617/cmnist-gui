@@ -43,3 +43,22 @@ Current focus:
 * Integrating the existing CMNIST backend with Dear ImGui
 * Building the drawing canvas for handwritten digit input
 
+Rough sketch for the UI:
+```
++-------------------------------------------------------+
+| File   Help                         Brush Size [====] |
++---------------------------+---------------------------+
+|                           |                           |
+|      Drawing Canvas       | Prediction                |
+|                           |                           |
+|                           | Digit: 7                  |
+|                           | Confidence: 98.2%         |
+|                           |                           |
+|                           | Top-5                     |
+|                           | 7 -> 98.2%                |
+|                           | 1 -> 1.1%                 |
+|                           | 9 -> 0.4%                 |
++---------------------------+---------------------------+
+| Clear                                         Predict |
++-------------------------------------------------------+
+```
