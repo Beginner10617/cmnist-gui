@@ -25,4 +25,5 @@
 *.app
 
 # Build folder
-build/
+build/*
+!build/.gitkeep
