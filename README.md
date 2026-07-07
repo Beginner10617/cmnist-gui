@@ -1,6 +1,6 @@
 # CMNIST-GUI
 
-A small graphical frontend for the **CMNIST** handwritten digit recognition project, built using **C++**, **Dear ImGui**, **SDL2**, and **OpenGL 3**.
+A small graphical frontend for the [**CMNIST**](https://github.com/Beginner10617/CMNIST.git) handwritten digit recognition project, built using **C++**, **Dear ImGui**, **SDL2**, and **OpenGL 3**.
 
 The goal of this project is to provide an interactive interface where users can draw handwritten digits and have them classified using the neural network implementation from the original CMNIST project, which is written entirely in C.
 
