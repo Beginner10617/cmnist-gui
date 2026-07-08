@@ -1,3 +1,4 @@
+#include <cstdlib>
 extern "C" {
 #include "cmnist/neuron_utils.h"
 }
@@ -6,7 +7,11 @@ extern "C" {
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
+#include <stdio.h>
 int main() {
-  Value *v = createNewValue(1.2f, "hello");
+  if (SDL_Init(SDL_INIT_EVERYTHING)) {
+    printf("ERROR: %s\n", SDL_GetError());
+    exit(EXIT_FAILURE);
+  }
   return 0;
 }
