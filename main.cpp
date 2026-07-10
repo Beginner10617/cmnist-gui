@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdlib>
+#include <ios>
 extern "C" {
 #include "cmnist/neuron_utils.h"
 }
@@ -10,6 +11,12 @@ extern "C" {
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 #include <stdio.h>
+#include <vector>
+
+struct Stroke {
+  std::vector<ImVec2> points;
+};
+
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
     printf("Error: %s\n", SDL_GetError());
@@ -78,6 +85,12 @@ int main() {
   ImVec4 backgrnd_color = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
   io.IniFilename = nullptr; // no ui persistence needed
 
+  // for pencil strokes
+  std::vector<Stroke> strokes;
+  bool drawing = false;
+  ImVec2 current_posn;
+  unsigned int current_stroke_index;
+
   // main-loop
   bool running = true;
   while (running) {
@@ -108,9 +121,29 @@ int main() {
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     ImVec2 cursor = ImGui::GetCursorScreenPos();
     ImVec2 canvas_dimension(7 * factor, 8 * factor * 10 / 12);
-    draw_list->AddRectFilled(cursor, cursor + canvas_dimension,
-                             IM_COL32(255, 255, 255, 255));
+    draw_list->AddRectFilled(cursor, cursor + canvas_dimension, IM_COL32_WHITE);
     ImGui::InvisibleButton("Canvas", canvas_dimension);
+    bool hovered = ImGui::IsItemHovered();
+    bool active = ImGui::IsItemActive(); // mouse click
+    current_posn = ImGui::GetIO().MousePos;
+    if (hovered && active) {
+      if (!drawing) {
+        current_stroke_index = strokes.size();
+        strokes.emplace_back();
+      }
+      drawing = true;
+    }
+    if (!active)
+      drawing = false;
+
+    if (drawing)
+      strokes[current_stroke_index].points.push_back(current_posn);
+    for (Stroke stroke : strokes) {
+      for (int i = 1; i < stroke.points.size(); i++)
+        draw_list->AddLine(stroke.points[i - 1], stroke.points[i],
+                           IM_COL32_BLACK, 2.0f);
+    }
+
     ImGui::End();
 
     // rendering
