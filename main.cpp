@@ -3,6 +3,7 @@
 extern "C" {
 #include "cmnist/neuron_utils.h"
 }
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "SDL.h"
 #include "SDL_opengl.h"
 #include "imgui.h"
@@ -101,7 +102,16 @@ int main() {
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
-    // Add widgets
+    // Add widgets and windows
+    ImGui::SetNextWindowPos(ImVec2(60, 100), ImGuiCond_Once);
+    ImGui::Begin("Canvas");
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+    ImVec2 cursor = ImGui::GetCursorScreenPos();
+    ImVec2 canvas_dimension(7 * factor, 8 * factor * 10 / 12);
+    draw_list->AddRectFilled(cursor, cursor + canvas_dimension,
+                             IM_COL32(255, 255, 255, 255));
+    ImGui::InvisibleButton("Canvas", canvas_dimension);
+    ImGui::End();
 
     // rendering
     ImGui::Render();
