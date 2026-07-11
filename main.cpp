@@ -98,6 +98,7 @@ int main() {
   bool first_frame = true;
   // main-loop
   bool running = true;
+  bool show_help = false;
   while (running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -136,17 +137,14 @@ int main() {
     }
     ImGui::DockSpaceOverViewport(dockspace_id, viewport,
                                  ImGuiDockNodeFlags_PassthruCentralNode);
-    // ImGui::Begin("Toolbar", nullptr);
-    // ImGui::End();
+
+    if (show_help) {
+      ImGui::Begin("Help", &show_help, ImGuiWindowFlags_NoCollapse);
+      ImGui::Text("Blah blah blah blah blah ... (under construction)");
+      ImGui::End();
+    }
 
     ImGui::Begin("Prediction", nullptr);
-    if (ImGui::Button("File")) {
-      // load model from text file
-    }
-    ImGui::SameLine(750);
-    if (ImGui::Button("Clear")) {
-      strokes.clear();
-    }
     ImGui::End();
 
     // Canvas
@@ -157,6 +155,7 @@ int main() {
     ImGui::SameLine();
     if (ImGui::Button("Help")) {
       // load help etc
+      show_help = true;
     }
     ImGui::SameLine();
     if (ImGui::Button("Clear")) {
