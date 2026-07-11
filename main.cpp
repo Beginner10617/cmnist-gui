@@ -20,34 +20,41 @@ struct Stroke {
   std::vector<ImVec2> points;
 };
 
+struct Dir_entry {
+  std::string name;
+  bool is_dir;
+};
 struct DirectoryContents {
   std::filesystem::path path = std::filesystem::current_path();
-  std::vector<std::string> names;
+  std::vector<Dir_entry> entries;
 };
-
 void update_directory(DirectoryContents &dir) {
-  dir.names.clear();
+  dir.entries.clear();
   for (auto const &dir_entry : std::filesystem::directory_iterator{dir.path})
-    dir.names.push_back(dir_entry.path().filename());
+    dir.entries.push_back(
+        {dir_entry.path().filename(), dir_entry.is_directory()});
 }
 
 /*
-DirectoryContents dir;
-while (true) {
-  update_directory(dir);
-  int i = 0;
-  for (auto file : dir.names) {
-    std::cout << i << " : " << file << std::endl;
-    i++;
+int main() {
+  DirectoryContents dir;
+  while (true) {
+    update_directory(dir);
+    int i = 0;
+    for (auto file : dir.entries) {
+      std::cout << i << " : " << file.name << std::endl;
+      i++;
+    }
+    i = 0;
+    do {
+      std::cout << "Any directory to explore: ";
+      scanf("%d", &i);
+    } while (i < 0 || i > dir.entries.size());
+    dir.path += "/" + dir.entries[i].name;
   }
-  i = 0;
-  do {
-    std::cout << "Any directory to explore: ";
-    scanf("%d", &i);
-  } while (i < 0 || i > dir.names.size());
-  dir.path += "/" + dir.names[i];
+
+  return 0;
 }
-return 0;
 */
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
