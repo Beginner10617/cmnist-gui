@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <ios>
+#include <string>
 extern "C" {
 #include "cmnist/neuron_utils.h"
 }
@@ -11,13 +12,43 @@ extern "C" {
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_internal.h"
+#include <filesystem>
+#include <iostream>
 #include <stdio.h>
 #include <vector>
-
 struct Stroke {
   std::vector<ImVec2> points;
 };
 
+struct DirectoryContents {
+  std::filesystem::path path = std::filesystem::current_path();
+  std::vector<std::string> names;
+};
+
+void update_directory(DirectoryContents &dir) {
+  dir.names.clear();
+  for (auto const &dir_entry : std::filesystem::directory_iterator{dir.path})
+    dir.names.push_back(dir_entry.path().filename());
+}
+
+/*
+DirectoryContents dir;
+while (true) {
+  update_directory(dir);
+  int i = 0;
+  for (auto file : dir.names) {
+    std::cout << i << " : " << file << std::endl;
+    i++;
+  }
+  i = 0;
+  do {
+    std::cout << "Any directory to explore: ";
+    scanf("%d", &i);
+  } while (i < 0 || i > dir.names.size());
+  dir.path += "/" + dir.names[i];
+}
+return 0;
+*/
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
     printf("Error: %s\n", SDL_GetError());
