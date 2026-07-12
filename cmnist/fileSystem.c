@@ -122,7 +122,7 @@ typedef enum {
   NEURON_DESCRIPTION
 } parsing_state;
 typedef struct {
-  char *mlp_name, layer_name, neuron_name;
+  char *mlp_name, *layer_name, *neuron_name;
   size_t mlp_num_of_inputs, mlp_num_of_outputs, prev_layer_num_of_neurons,
       curr_layer_dim_of_neuron, curr_layer_num_of_neuron;
   parsing_state state;
@@ -145,6 +145,16 @@ int validate(const char *Fname) {
 
   // main validation starts from here
   parsing_data parsing;
+  parsing.state = MLP_DESCRIPTION;
+  parsing.mlp_name = NULL;
+  parsing.layer_name = NULL;
+  parsing.neuron_name = NULL;
+  parsing.mlp_num_of_inputs = 0;
+  parsing.mlp_num_of_outputs = 0;
+  parsing.prev_layer_num_of_neurons = 0;
+  parsing.curr_layer_dim_of_neuron = 0;
+  parsing.prev_layer_num_of_neurons = 0;
+
   size_t i, line_start, line_end, line_len, line_num = 0;
   while (buf[i]) {
     line_num++;
@@ -157,9 +167,22 @@ int validate(const char *Fname) {
     for (size_t j = 0; j < line_len; j++)
       line[j] = buf[line_start + j];
     line[line_len] = '\0';
-    char *head = line;
-    while (*head && isspace((unsigned char)*head))
-      head++;
+
+    switch (parsing.state) {
+    case MLP_DESCRIPTION:
+      if (!parsing.mlp_name) {
+        if (line_len > 5) {
+          printf("mlp name should be of 5 or less char\n");
+          return 1;
+        }
+        parsing.mlp_name = line;
+      }
+      break;
+    case LAYER_DESCRIPTION:
+      break;
+    case NEURON_DESCRIPTION:
+      break;
+    }
   }
   return 0;
 }

@@ -1,0 +1,36 @@
+<mlp-name>
+<mlp-num-of-outputs>
+<mlp-num-of-inputs>
+<mlp-num-of-layers>
+
+FOR EACH LAYER:
+<layer-name>
+<layer-num-of-neurons>
+<layer-dim-of-neurons>
+<layer-actfunc>
+
+FOR EACH NEURON:
+<neuron-name>
+<neuron-dim>
+<neuron-bias>
+[<neuron-weights>]
+
+END FOR
+END FOR
+
+Consistency validations:
+ALL NAMES LENGTH < 5
+ALL NUM > 0
+
+<mlp-num-of-layers> = <layers>.size()
+<mlp-num-of-inputs> = <layer-dim-of-neurons>[0]
+<mlp-num-of-outputs> = <layer-num-of-neurons>[last]
+
+FOR EACH i IN (0, mlp-num-of-layers)
+<layer-num-of-neurons>[i-1] = <layer-dim-of-neurons>[i]
+
+<layer-actfunc> IN [0,1]
+
+<layer-num-of-neurons> = <neurons>.size()
+<layer-dim-of-neurons> = <neuron-dim>
+<neuron-dim> = <neuron-weights>.size()
