@@ -14,7 +14,6 @@ extern "C" {
 #include "imgui_internal.h"
 #include <filesystem>
 #include <iostream>
-#include <stdio.h>
 #include <vector>
 struct Stroke {
   std::vector<ImVec2> points;
@@ -30,6 +29,7 @@ struct DirectoryContents {
 };
 void update_directory(DirectoryContents &dir) {
   dir.entries.clear();
+  dir.entries.push_back({dir.path / "..", true});
   for (auto const &dir_entry : std::filesystem::directory_iterator{dir.path})
     dir.entries.push_back(
         {dir_entry.path().filename(), dir_entry.is_directory()});
@@ -134,9 +134,19 @@ int main() {
   float BRUSH_WIDTH = 2.0f;
   ImVec2 cursor;
   bool first_frame = true;
+
+  // for loading models from file-browser
+  bool show_file_browser = false;
+  DirectoryContents dir;
+  update_directory(dir);
+  std::string model_filepath = "";
+
+  // for help
+  bool show_help = false;
+  std::string help_text = "blah blah blah blah blah... (more to come)";
+
   // main-loop
   bool running = true;
-  bool show_help = false;
   while (running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -178,7 +188,30 @@ int main() {
 
     if (show_help) {
       ImGui::Begin("Help", &show_help, ImGuiWindowFlags_NoCollapse);
-      ImGui::Text("Blah blah blah blah blah ... (under construction)");
+      ImGui::Text("%s", help_text.c_str());
+      ImGui::End();
+    }
+
+    if (show_file_browser) {
+      ImGui::Begin("File", &show_file_browser, ImGuiWindowFlags_NoCollapse);
+      ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+      for (int index = 0; index < dir.entries.size(); index++) {
+        Dir_entry entry = dir.entries[index];
+        if (entry.is_dir) {
+          std::string display_name = "[+] " + (index ? entry.name : "..");
+          if (ImGui::Button(display_name.c_str(), ImVec2(500, 0))) {
+            dir.path /= entry.name;
+            update_directory(dir);
+          }
+        } else {
+          std::string display_name = "    " + entry.name;
+          if (ImGui::Button(display_name.c_str(), ImVec2(500, 0))) {
+            model_filepath = entry.name;
+            show_file_browser = false;
+          }
+        }
+      }
+      ImGui::PopStyleVar();
       ImGui::End();
     }
 
@@ -188,7 +221,7 @@ int main() {
     // Canvas
     ImGui::Begin("Canvas", nullptr);
     if (ImGui::Button("File")) {
-      // load model from text file
+      show_file_browser = true;
     }
     ImGui::SameLine();
     if (ImGui::Button("Help")) {
