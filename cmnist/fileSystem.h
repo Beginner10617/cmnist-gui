@@ -9,4 +9,6 @@ void saveMLP(MLP *mlp, const char *Fname);
 // Load MLP from parameters specified in a textfile
 MLP *loadMLP(const char *Fname);
 
+// validate the file before parsing, non zero value in case of error
+int validate(const char *Fname);
 #endif

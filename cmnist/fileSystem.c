@@ -1,5 +1,7 @@
 #include "fileSystem.h"
-#include "stdlib.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 void saveMLP(MLP *mlp, const char *Fname) {
   FILE *file;
@@ -42,6 +44,11 @@ MLP *loadMLP(const char *Fname) {
   file = fopen(Fname, "r");
   if (file == NULL) {
     printf("Error opening file %s\n", Fname);
+    return NULL;
+  }
+  int ecode = validate(Fname);
+  if (ecode) {
+    printf("Error (code %d) parsing file %s\n", ecode, Fname);
     return NULL;
   }
   MLP *mlp = malloc(sizeof(MLP));
@@ -107,4 +114,52 @@ MLP *loadMLP(const char *Fname) {
   }
   fclose(file);
   return mlp;
+}
+
+typedef enum {
+  MLP_DESCRIPTION,
+  LAYER_DESCRIPTION,
+  NEURON_DESCRIPTION
+} parsing_state;
+typedef struct {
+  char *mlp_name, layer_name, neuron_name;
+  size_t mlp_num_of_inputs, mlp_num_of_outputs, prev_layer_num_of_neurons,
+      curr_layer_dim_of_neuron, curr_layer_num_of_neuron;
+  parsing_state state;
+} parsing_data;
+int validate(const char *Fname) {
+  FILE *file = fopen(Fname, "r");
+  if (!file)
+    return 1;
+  fseek(file, 0, SEEK_END);
+  long size = ftell(file);
+  rewind(file);
+  char *buf = malloc(sizeof(char) * size);
+  if (!buf) {
+    printf("unable to validate file %s ran out of memory\n", Fname);
+    exit(EXIT_FAILURE);
+  }
+  size_t read = fread(buf, 1, size, file);
+  fclose(file);
+  buf[read] = '\0';
+
+  // main validation starts from here
+  parsing_data parsing;
+  size_t i, line_start, line_end, line_len, line_num = 0;
+  while (buf[i]) {
+    line_num++;
+    line_start = i;
+    while (buf[i] && buf[i] != '\n')
+      i++;
+    line_end = i;
+    line_len = line_start - line_end;
+    char line[line_len + 1];
+    for (size_t j = 0; j < line_len; j++)
+      line[j] = buf[line_start + j];
+    line[line_len] = '\0';
+    char *head = line;
+    while (*head && isspace((unsigned char)*head))
+      head++;
+  }
+  return 0;
 }
