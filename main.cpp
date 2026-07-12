@@ -12,6 +12,8 @@ extern "C" {
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <vector>
@@ -139,7 +141,7 @@ int main() {
   bool show_file_browser = false;
   DirectoryContents dir;
   update_directory(dir);
-  std::string model_filepath = "";
+  std::string model_filepath = "model.txt", search_buf;
 
   // for help
   bool show_help = false;
@@ -194,9 +196,18 @@ int main() {
 
     if (show_file_browser) {
       ImGui::Begin("File", &show_file_browser, ImGuiWindowFlags_NoCollapse);
+      ImGui::Text("Search:");
+      ImGui::SameLine();
+      ImGui::InputText("##search_filter", &search_buf);
       ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
       for (int index = 0; index < dir.entries.size(); index++) {
         Dir_entry entry = dir.entries[index];
+        bool search_result =
+            (std::mismatch(search_buf.begin(), search_buf.end(),
+                           entry.name.begin())
+                 .first == search_buf.end());
+        if (index && search_buf.size() && !search_result)
+          continue;
         if (entry.is_dir) {
           std::string display_name = "[+] " + (index ? entry.name : "..");
           if (ImGui::Button(display_name.c_str(), ImVec2(500, 0))) {
