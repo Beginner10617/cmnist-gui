@@ -1,7 +1,14 @@
 #include "fileSystem.h"
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+const char *error_messages[] = {
+    "Unreachable",
+    "names should be of 5 characters or less",
+
+};
 
 void saveMLP(MLP *mlp, const char *Fname) {
   FILE *file;
@@ -127,6 +134,32 @@ typedef struct {
       curr_layer_dim_of_neuron, curr_layer_num_of_neuron;
   parsing_state state;
 } parsing_data;
+
+bool is_positive_int(char *str) {
+  // Assuming null terminated string
+  size_t start = 0, end = 0;
+  while (*(str + end))
+    end++;
+  // left strip
+  while (isspace((unsigned char)*(str + start)))
+    start++;
+  // right strip
+  if (!end)
+    return false; // empty string
+  end--;
+  while (end > start && isspace((unsigned char)*(str + end)))
+    end--;
+  if (isspace((unsigned char)*(str + end)))
+    return false;
+  for (size_t i = start; i <= end; i++) {
+    if (!isdigit((unsigned char)*(str + i)))
+      return false;
+  }
+  return true;
+}
+
+bool is_float(char *str) {}
+
 int validate(const char *Fname) {
   FILE *file = fopen(Fname, "r");
   if (!file)
