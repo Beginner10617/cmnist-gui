@@ -158,7 +158,36 @@ bool is_positive_int(char *str) {
   return true;
 }
 
-bool is_float(char *str) {}
+bool is_float(char *str) {
+  // Assuming null terminated string
+  size_t start = 0, end = 0;
+  while (*(str + end))
+    end++;
+  // left strip
+  while (isspace((unsigned char)*(str + start)))
+    start++;
+  // right strip
+  if (!end)
+    return false; // empty string
+  end--;
+  while (end > start && isspace((unsigned char)*(str + end)))
+    end--;
+  if (isspace((unsigned char)*(str + end)))
+    return false;
+
+  bool point_read = false;
+  for (size_t i = start; i <= end; i++) {
+    if (*(str + i) == '-' && !i)
+      continue;
+    if (*(str + i) == '.' && !point_read) {
+      point_read = true;
+      continue;
+    }
+    if (!isdigit((unsigned char)*(str + i)))
+      return false;
+  }
+  return point_read;
+}
 
 int validate(const char *Fname) {
   FILE *file = fopen(Fname, "r");
