@@ -55,7 +55,7 @@ MLP *loadMLP(const char *Fname) {
   }
   int ecode = validate(Fname);
   if (ecode) {
-    printf("Error (code %d) parsing file %s\n", ecode, Fname);
+    printf("Error parsing file %s : %s\n", Fname, error_messages[ecode]);
     return NULL;
   }
   MLP *mlp = malloc(sizeof(MLP));
@@ -234,7 +234,6 @@ int validate(const char *Fname) {
     case MLP_DESCRIPTION:
       if (!parsing.mlp_name) {
         if (line_len > 5) {
-          printf("mlp name should be of 5 or less char\n");
           return 1;
         }
         parsing.mlp_name = line;
