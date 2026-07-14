@@ -6,9 +6,14 @@
 
 const char *error_messages[] = {
     "Unreachable",
-    "names should be of 5 characters or less",
-    "invalid input, value can't be converted to positive integer",
-    "integer value wasn't supposed to be a zero",
+    "mlp names should be of 5 characters or less",
+    "(mlp) invalid input, value can't be converted to positive integer",
+    "(mlp) integer value wasn't supposed to be a zero",
+    "layer names should be of 5 characters or less",
+    "(layer) invalid input, value can't be converted to positive integer",
+    "(layer) integer value wasn't supposed to be a zero",
+  "(layer) in-consistent input, number of neurons of previous layer, and dimension of neurons of current layer should be equal",
+    "only 2 activation function states are implemented for now",
 };
 
 void saveMLP(MLP *mlp, const char *Fname) {
@@ -133,7 +138,7 @@ typedef struct {
   char *mlp_name, *layer_name, *neuron_name;
   size_t mlp_num_of_inputs, mlp_num_of_outputs, mlp_num_of_layers,
       prev_layer_num_of_neurons, curr_layer_dim_of_neuron,
-      curr_layer_num_of_neuron;
+      curr_layer_num_of_neuron, curr_layer_act;
   parsing_state state;
 } parsing_data;
 
@@ -219,6 +224,7 @@ int validate(const char *Fname) {
   parsing.prev_layer_num_of_neurons = 0;
   parsing.curr_layer_dim_of_neuron = 0;
   parsing.prev_layer_num_of_neurons = 0;
+  parsing.curr_layer_act = -1;
 
   size_t i, line_start, line_end, line_len, line_num = 0;
   while (buf[i]) {
@@ -263,6 +269,36 @@ int validate(const char *Fname) {
       }
       break;
     case LAYER_DESCRIPTION:
+      if (!parsing.layer_name) {
+        if (line_len > 5) {
+          return 4;
+        }
+        parsing.layer_name = line;
+      } else if (!parsing.curr_layer_num_of_neuron) {
+        if (!is_positive_int(line))
+          return 5;
+        if (!atoi(line))
+          return 6;
+        parsing.curr_layer_num_of_neuron = atoi(line);
+      } else if (!parsing.curr_layer_dim_of_neuron) {
+        if (!is_positive_int(line))
+          return 5;
+        if (!atoi(line))
+          return 6;
+        parsing.curr_layer_dim_of_neuron = atoi(line);
+        if (parsing.curr_layer_dim_of_neuron !=
+            parsing.prev_layer_num_of_neurons)
+          return 7;
+      } else if (parsing.curr_layer_act < 0) {
+        if (!is_positive_int(line))
+          return 5;
+        if (!atoi(line))
+          return 6;
+        parsing.curr_layer_act = atoi(line);
+        if (parsing.curr_layer_act > 2)
+          return 8;
+      } 
+
       break;
     case NEURON_DESCRIPTION:
       break;
