@@ -7,7 +7,8 @@
 const char *error_messages[] = {
     "Unreachable",
     "names should be of 5 characters or less",
-
+    "invalid input, value can't be converted to positive integer",
+    "integer value wasn't supposed to be a zero",
 };
 
 void saveMLP(MLP *mlp, const char *Fname) {
@@ -130,8 +131,9 @@ typedef enum {
 } parsing_state;
 typedef struct {
   char *mlp_name, *layer_name, *neuron_name;
-  size_t mlp_num_of_inputs, mlp_num_of_outputs, prev_layer_num_of_neurons,
-      curr_layer_dim_of_neuron, curr_layer_num_of_neuron;
+  size_t mlp_num_of_inputs, mlp_num_of_outputs, mlp_num_of_layers,
+      prev_layer_num_of_neurons, curr_layer_dim_of_neuron,
+      curr_layer_num_of_neuron;
   parsing_state state;
 } parsing_data;
 
@@ -213,6 +215,7 @@ int validate(const char *Fname) {
   parsing.neuron_name = NULL;
   parsing.mlp_num_of_inputs = 0;
   parsing.mlp_num_of_outputs = 0;
+  parsing.mlp_num_of_layers = 0;
   parsing.prev_layer_num_of_neurons = 0;
   parsing.curr_layer_dim_of_neuron = 0;
   parsing.prev_layer_num_of_neurons = 0;
@@ -237,6 +240,26 @@ int validate(const char *Fname) {
           return 1;
         }
         parsing.mlp_name = line;
+      } else if (!parsing.mlp_num_of_outputs) {
+        if (!is_positive_int(line))
+          return 2;
+        if (!atoi(line))
+          return 3;
+        parsing.mlp_num_of_outputs = atoi(line);
+      } else if (!parsing.mlp_num_of_inputs) {
+        if (!is_positive_int(line))
+          return 2;
+        if (!atoi(line))
+          return 3;
+        parsing.mlp_num_of_inputs = atoi(line);
+      } else if (!parsing.mlp_num_of_layers) {
+        if (!is_positive_int(line))
+          return 2;
+        if (!atoi(line))
+          return 3;
+        parsing.mlp_num_of_layers = atoi(line);
+        parsing.prev_layer_num_of_neurons = parsing.mlp_num_of_inputs;
+        parsing.state = LAYER_DESCRIPTION;
       }
       break;
     case LAYER_DESCRIPTION:
