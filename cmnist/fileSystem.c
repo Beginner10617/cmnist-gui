@@ -12,8 +12,12 @@ const char *error_messages[] = {
     "layer names should be of 5 characters or less",
     "(layer) invalid input, value can't be converted to positive integer",
     "(layer) integer value wasn't supposed to be a zero",
-  "(layer) in-consistent input, number of neurons of previous layer, and dimension of neurons of current layer should be equal",
+    "(layer) in-consistent input, number of neurons of previous layer, and dimension of neurons of current layer should be equal",
     "only 2 activation function states are implemented for now",
+    "(neuron) invalid input, value can't be converted to positive integer",
+   "(neuron) integer value wasn't supposed to be zero",
+   "(neuron) in-consistent input, dimension of neuron doesn't match the dimension specified in layer description",
+   "(neuron) invalid input, value can't be converted to float",
 };
 
 void saveMLP(MLP *mlp, const char *Fname) {
@@ -138,7 +142,8 @@ typedef struct {
   char *mlp_name, *layer_name, *neuron_name;
   size_t mlp_num_of_inputs, mlp_num_of_outputs, mlp_num_of_layers,
       prev_layer_num_of_neurons, curr_layer_dim_of_neuron,
-      curr_layer_num_of_neuron, curr_layer_act;
+      curr_layer_num_of_neuron, curr_layer_act, neuron_dim, neuron_count,
+      neuron_param_index, neuron_index, layer_index;
   parsing_state state;
 } parsing_data;
 
@@ -211,7 +216,6 @@ int validate(const char *Fname) {
   size_t read = fread(buf, 1, size, file);
   fclose(file);
   buf[read] = '\0';
-
   // main validation starts from here
   parsing_data parsing;
   parsing.state = MLP_DESCRIPTION;
@@ -223,21 +227,29 @@ int validate(const char *Fname) {
   parsing.mlp_num_of_layers = 0;
   parsing.prev_layer_num_of_neurons = 0;
   parsing.curr_layer_dim_of_neuron = 0;
-  parsing.prev_layer_num_of_neurons = 0;
+  parsing.curr_layer_num_of_neuron = 0;
   parsing.curr_layer_act = -1;
-
-  size_t i, line_start, line_end, line_len, line_num = 0;
+  parsing.neuron_count = 0;
+  parsing.neuron_dim = 0;
+  parsing.neuron_param_index = 0;
+  parsing.neuron_index = 0;
+  parsing.layer_index = 0;
+  size_t i=0, line_start, line_end, line_len, line_num = 0;
   while (buf[i]) {
     line_num++;
     line_start = i;
     while (buf[i] && buf[i] != '\n')
       i++;
+
     line_end = i;
-    line_len = line_start - line_end;
+    i++;
+    line_len = line_end - line_start;
     char line[line_len + 1];
     for (size_t j = 0; j < line_len; j++)
       line[j] = buf[line_start + j];
+
     line[line_len] = '\0';
+    //printf("(%zu) %s\n",line_len, line);
 
     switch (parsing.state) {
     case MLP_DESCRIPTION:
@@ -287,8 +299,10 @@ int validate(const char *Fname) {
           return 6;
         parsing.curr_layer_dim_of_neuron = atoi(line);
         if (parsing.curr_layer_dim_of_neuron !=
-            parsing.prev_layer_num_of_neurons)
+            parsing.prev_layer_num_of_neurons){
+		printf("%zu %zu\n", parsing.curr_layer_dim_of_neuron, parsing.prev_layer_num_of_neurons);
           return 7;
+	}
       } else if (parsing.curr_layer_act < 0) {
         if (!is_positive_int(line))
           return 5;
@@ -297,10 +311,47 @@ int validate(const char *Fname) {
         parsing.curr_layer_act = atoi(line);
         if (parsing.curr_layer_act > 2)
           return 8;
-      } 
-
+      }
       break;
     case NEURON_DESCRIPTION:
+      if (!parsing.neuron_name) {
+        if (line_len > 5) {
+          return 4;
+        }
+        parsing.neuron_name = line;
+      } else if (!parsing.neuron_dim) {
+        if (!is_positive_int(line))
+          return 9;
+        if (!atoi(line))
+          return 10;
+        parsing.neuron_dim = atoi(line);
+        if(parsing.neuron_dim != parsing.curr_layer_dim_of_neuron)
+          return 11;
+      } else {
+        if (!is_float(line))
+          return 12;
+        parsing.neuron_param_index++;
+        if (parsing.neuron_param_index == parsing.neuron_dim + 1){
+          parsing.neuron_count++;
+          parsing.neuron_name = NULL;
+          parsing.neuron_dim = 0;
+          parsing.neuron_param_index = 0;
+          if (parsing.curr_layer_num_of_neuron == parsing.neuron_count){
+            parsing.prev_layer_num_of_neurons = parsing.neuron_count;
+            parsing.layer_name = NULL;
+            parsing.curr_layer_num_of_neuron = 0;
+            parsing.curr_layer_dim_of_neuron = 0;
+            parsing.curr_layer_act = 0;
+            parsing.layer_index++;
+            if(parsing.mlp_num_of_layers == parsing.layer_index) break;
+            parsing.state = LAYER_DESCRIPTION;
+          }
+        }
+        // count dim + 1 valid floats
+        // also update neuron count
+        // then reset for next neuron / layer
+        // based on that
+      }
       break;
     }
   }
