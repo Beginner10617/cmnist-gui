@@ -3,7 +3,8 @@
 #include <ios>
 #include <string>
 extern "C" {
-#include "cmnist/neuron_utils.h"
+#include "cmnist/fileSystem.h"
+#include "cmnist/utils.h"
 }
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "SDL.h"
@@ -36,28 +37,8 @@ void update_directory(DirectoryContents &dir) {
     dir.entries.push_back(
         {dir_entry.path().filename(), dir_entry.is_directory()});
 }
+typedef enum { NOT_LOADED, LOADING, LOADED_SUCCESS, ERROR } FileState;
 
-/*
-int main() {
-  DirectoryContents dir;
-  while (true) {
-    update_directory(dir);
-    int i = 0;
-    for (auto file : dir.entries) {
-      std::cout << i << " : " << file.name << std::endl;
-      i++;
-    }
-    i = 0;
-    do {
-      std::cout << "Any directory to explore: ";
-      scanf("%d", &i);
-    } while (i < 0 || i > dir.entries.size());
-    dir.path += "/" + dir.entries[i].name;
-  }
-
-  return 0;
-}
-*/
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING)) {
     printf("Error: %s\n", SDL_GetError());
@@ -139,9 +120,11 @@ int main() {
 
   // for loading models from file-browser
   bool show_file_browser = false;
+  FileState file_state = NOT_LOADED;
   DirectoryContents dir;
   update_directory(dir);
-  std::string model_filepath = "model.txt", search_buf;
+  std::string model_filepath, search_buf;
+  MLP *mlp = NULL;
 
   // for help
   bool show_help = false;
@@ -219,6 +202,7 @@ int main() {
           if (ImGui::Button(display_name.c_str(), ImVec2(500, 0))) {
             model_filepath = entry.name;
             show_file_browser = false;
+            file_state = LOADING;
           }
         }
       }
@@ -227,6 +211,19 @@ int main() {
     }
 
     ImGui::Begin("Prediction", nullptr);
+    if (file_state == LOADING) {
+      freeMLP(mlp);
+      mlp = loadMLP(model_filepath.c_str());
+      if (mlp)
+        file_state = LOADED_SUCCESS;
+      else
+        file_state = ERROR;
+    }
+    if (file_state == LOADED_SUCCESS) {
+      ImGui::Text("Model loaded successfully!");
+    } else if (file_state == ERROR) {
+      ImGui::Text("Error loading model from %s", model_filepath.c_str());
+    }
     ImGui::End();
 
     // Canvas
