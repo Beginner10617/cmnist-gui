@@ -46,13 +46,6 @@ int ceil_division(int x, int y) {
   return x / y + 1;
 }
 uint8_t *to_img_data(std::vector<Stroke> strokes) {
-  auto f = fopen("log.txt", "w");
-  uint8_t *output = (uint8_t *)malloc(sizeof(uint8_t) * 28 * 28);
-  if (output == NULL)
-    return NULL;
-  // initialize
-  for (int i = 0; i < 28 * 28; i++)
-    output[i] = 0;
   // calculate bounding box
   int x1 = INT_MAX, y1 = INT_MAX, x2 = INT_MIN, y2 = INT_MIN;
   for (auto stroke : strokes) {
@@ -65,10 +58,11 @@ uint8_t *to_img_data(std::vector<Stroke> strokes) {
         x2 = point.x;
       if (y2 < point.y)
         y2 = point.y;
-      fprintf(f, "%f %f\n", point.x, point.y);
     }
   }
-  printf("Bounded box : (%d, %d, %d, %d)\n", x1, y1, x2, y2);
+  if (x1 >= x2 || y1 >= y2) {
+    return NULL;
+  }
   int width = x2 - x1, height = y2 - y1;
   // horizontal or vertical fit?
   int grid_x1, grid_x2, grid_y1, grid_y2, cell_size;
@@ -76,15 +70,21 @@ uint8_t *to_img_data(std::vector<Stroke> strokes) {
     cell_size = ceil_division(width, 20);
   else
     cell_size = ceil_division(height, 20);
+  if (cell_size == 1)
+    return NULL;
   int mid_x = (x1 + x2) / 2, mid_y = (y1 + y2) / 2;
   grid_x1 = mid_x - cell_size * 14;
   grid_y1 = mid_y - cell_size * 14;
   grid_x2 = mid_x + cell_size * 14;
   grid_y2 = mid_y + cell_size * 14;
-  printf("Grid : (%d, %d, %d, %d)\nCell size : %d\n", grid_x1, grid_y1, grid_x2,
-         grid_y2, cell_size);
 
+  // initialize
+  uint8_t *output = (uint8_t *)malloc(sizeof(uint8_t) * 28 * 28);
+  for (int i = 0; i < 28 * 28; i++)
+    output[i] = 0;
   // resterization
+  if (output == NULL)
+    return NULL;
   for (auto stroke : strokes) {
     if (stroke.points.size() < 2)
       continue;
@@ -241,6 +241,14 @@ int main() {
   bool show_help = false;
   std::string help_text = "blah blah blah blah blah... (more to come)";
 
+  // for cmnist backend
+  uint8_t *draw_data;
+  Value **mlp_input_data, **mlp_output_data;
+
+  // for frontend display
+  float prediction[10];
+  bool display_prediciton = false;
+
   // main-loop
   bool running = true;
   while (running) {
@@ -338,6 +346,12 @@ int main() {
     } else if (file_state == NOT_LOADED) {
       ImGui::Text("Select a file to load model parameters");
     }
+    if (display_prediciton) {
+      // raw output display for now
+      for (int i = 0; i < 10; i++) {
+        ImGui::Text("%d : %f", i, prediction[i]);
+      }
+    }
     ImGui::End();
 
     // Canvas
@@ -356,7 +370,22 @@ int main() {
     }
     ImGui::SameLine();
     if (ImGui::Button("Predict")) {
-      // call backend to display prediction
+      if (draw_data)
+        free(draw_data);
+      draw_data = to_img_data(strokes);
+      if (draw_data && mlp) {
+        mlp_input_data = imgDataToValueArray(draw_data, 28 * 28);
+        mlp_output_data = evaluateMLP(mlp, mlp_input_data);
+        for (int i = 0; i < 10; i++) {
+          prediction[i] = mlp_output_data[i]->data;
+          free(mlp_output_data[i]);
+        }
+        free(mlp_output_data);
+        for (int i = 0; i < 28 * 28; i++)
+          free(mlp_input_data[i]);
+        free(mlp_input_data);
+        display_prediciton = true;
+      }
     }
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     cursor = ImGui::GetCursorScreenPos();
@@ -399,15 +428,6 @@ int main() {
     // swap window call for sdl
     SDL_GL_SwapWindow(window);
   }
-  uint8_t *output = to_img_data(strokes);
-  for (int i = 0; i < 28; i++) {
-    for (int j = 0; j < 28; j++) {
-      if (output[i * 28 + j] > 0)
-        printf("@");
-      else
-        printf(" ");
-    }
-    printf("\n");
-  }
+
   return 0;
 }
