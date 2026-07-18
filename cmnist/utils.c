@@ -1,4 +1,6 @@
 #include "utils.h"
+#include "neuron.h"
+#include "neuron_utils.h"
 #include "stdio.h"
 
 Value **labelToValueArray(int x) {
@@ -27,4 +29,31 @@ Value **imgDataToValueArray(uint8_t *img, int img_sz) {
     out[i]->_isparameter = 1;
   }
   return out;
+}
+
+void freeMLP(MLP *mlp) {
+  if (mlp == NULL)
+    return;
+  if (mlp->actfunc)
+    free(mlp->actfunc);
+  for (int i = 0; i < mlp->num_of_layers; i++) {
+    Layer *layer = mlp->layers[i];
+    if (layer == NULL)
+      continue;
+    for (int j = 0; j < layer->num_of_neurons; j++) {
+      Neuron *neuron = layer->neurons[j];
+      if (neuron == NULL)
+        continue;
+      if (neuron->bias)
+        free(neuron->bias);
+      for (int k = 0; k < neuron->dimension; k++) {
+        Value *weight = neuron->weights[i];
+        if (weight)
+          free(weight);
+      }
+      free(neuron);
+    }
+    free(layer);
+  }
+  free(mlp);
 }
