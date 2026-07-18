@@ -1,5 +1,7 @@
+#include <cfloat>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <ios>
 #include <string>
@@ -43,10 +45,14 @@ int ceil_division(int x, int y) {
     return x / y;
   return x / y + 1;
 }
-uint8_t *to_img_data(const std::vector<Stroke> &strokes) {
+uint8_t *to_img_data(std::vector<Stroke> strokes) {
+  auto f = fopen("log.txt", "w");
   uint8_t *output = (uint8_t *)malloc(sizeof(uint8_t) * 28 * 28);
   if (output == NULL)
     return NULL;
+  // initialize
+  for (int i = 0; i < 28 * 28; i++)
+    output[i] = 0;
   // calculate bounding box
   int x1 = INT_MAX, y1 = INT_MAX, x2 = INT_MIN, y2 = INT_MIN;
   for (auto stroke : strokes) {
@@ -59,8 +65,10 @@ uint8_t *to_img_data(const std::vector<Stroke> &strokes) {
         x2 = point.x;
       if (y2 < point.y)
         y2 = point.y;
+      fprintf(f, "%f %f\n", point.x, point.y);
     }
   }
+  printf("Bounded box : (%d, %d, %d, %d)\n", x1, y1, x2, y2);
   int width = x2 - x1, height = y2 - y1;
   // horizontal or vertical fit?
   int grid_x1, grid_x2, grid_y1, grid_y2, cell_size;
@@ -73,9 +81,55 @@ uint8_t *to_img_data(const std::vector<Stroke> &strokes) {
   grid_y1 = mid_y - cell_size * 14;
   grid_x2 = mid_x + cell_size * 14;
   grid_y2 = mid_y + cell_size * 14;
+  printf("Grid : (%d, %d, %d, %d)\nCell size : %d\n", grid_x1, grid_y1, grid_x2,
+         grid_y2, cell_size);
 
   // resterization
-  //
+  for (auto stroke : strokes) {
+    if (stroke.points.size() < 2)
+      continue;
+    for (size_t i = 0; i + 1 < stroke.points.size(); i++) {
+      // Bresenham's line algorithm
+      // (https://en.wikipedia.org/wiki/Bresenham's_line_algorithm)
+      auto point_1 = stroke.points[i];
+      auto point_2 = stroke.points[i + 1];
+      int x0 = point_1.x, x1 = point_2.x;
+      int y0 = point_1.y, y1 = point_2.y;
+      int dx = std::abs(x0 - x1);
+      int dy = std::abs(y0 - y1);
+      int sx = (x0 < x1) ? 1 : -1;
+      int sy = (y0 < y1) ? 1 : -1;
+      int err = dx - dy;
+      size_t step = 0;
+      while (true) {
+        if (++step > dx + dy + 5) {
+          printf("Bresenham escaped!\n");
+          break;
+        }
+        int c = (x0 - grid_x1) / cell_size;
+        int r = (y0 - grid_y1) / cell_size;
+        if (r * 28 + c >= 28 * 28 || r * 28 + c < 0) {
+          printf("Error occurred, segment : %d %d %d %d\nr=%d c=%d\n", x0, y0,
+                 x1, y1, r, c);
+          printf("See in log segment : %f %f %f %f\n", point_1.x, point_1.y,
+                 point_2.x, point_2.y);
+          exit(1);
+        } else
+          output[r * 28 + c] = 255;
+        if (x0 == x1 && y0 == y1)
+          break;
+        int e2 = err * 2;
+        if (e2 > -dy) {
+          err -= dy;
+          x0 += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          y0 += sy;
+        }
+      }
+    }
+  }
   return output;
 }
 
@@ -344,6 +398,16 @@ int main() {
 
     // swap window call for sdl
     SDL_GL_SwapWindow(window);
+  }
+  uint8_t *output = to_img_data(strokes);
+  for (int i = 0; i < 28; i++) {
+    for (int j = 0; j < 28; j++) {
+      if (output[i * 28 + j] > 0)
+        printf("@");
+      else
+        printf(" ");
+    }
+    printf("\n");
   }
   return 0;
 }
