@@ -27,23 +27,34 @@ The goal of this project is to provide an interactive interface where users can 
 └── README.md       # README u r reading rn
 ```
 
+## Requirements
+
+- C/C++ compiler (clang or g++)
+- Git
+- zsh/bash
+  
 ## Build
 
-To build various components of the project, run the following bash scripts from the root:
+The project is currently configured to build on **macOS** using the provided shell scripts.
+Before building, ensure that a C/C++ toolchain (clang/g++) and the required development tools are installed.
+
+Run the following scripts from the project root:
+
 ```bash
 source bash/build_imgui.sh   # Build Dear ImGui
 source bash/build_sdl2.sh    # Build SDL2
 source bash/compile_c.sh     # Compile the C backend
 source bash/compile_cpp.sh   # Compile the C++ frontend
-source bash/link_mac.sh      # Link all object files, SDL2, and macOS system frameworks
+source bash/link_mac.sh      # Link the final executable
 ```
 
-Or instead you can use a single script :
+Alternatively, build everything in one step:
+
 ```bash
 source build_mac.sh
 ```
 
-Note that for other platforms, the link script won't be valid
+> **Note:** `link_mac.sh` links against macOS system frameworks and is therefore **macOS-specific**. To build on Linux or Windows, replace the linking step with the appropriate platform-specific libraries and linker flags.
 
 ## Demo
 <div align="center">
