@@ -239,7 +239,26 @@ int main() {
 
   // for help
   bool show_help = false;
-  std::string help_text = "blah blah blah blah blah... (more to come)";
+  std::string help_text =
+      R"(CMNIST-GUI
+==========
+
+This application provides a simple interface for testing handwritten digit
+recognition models trained on the MNIST dataset.
+
+Usage:
+- File → Open a saved model (.txt).
+- Draw a single digit on the canvas using the left mouse button.
+- Click "Predict" to run inference.
+- The panel on the right displays the activations for digits 0–9.
+- Click "Clear" to erase the canvas and draw again.
+
+Tips:
+- Draw one large digit near the center of the canvas.
+- Avoid multiple disconnected digits or excessive strokes.
+- Models must be compatible with the CMNIST model format.
+
+© CMNIST)";
 
   // for cmnist backend
   uint8_t *draw_data;
