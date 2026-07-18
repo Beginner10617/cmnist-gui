@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <ios>
 #include <string>
@@ -15,12 +16,68 @@ extern "C" {
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
+#include <climits>
 #include <filesystem>
 #include <iostream>
 #include <vector>
 struct Stroke {
   std::vector<ImVec2> points;
 };
+
+// Resterizer
+/*
+  IMAGE STRUCTURE 28x28 (IMPORTANT):
+  img[ 0 ] img[ 1 ] img[ 2 ] ... img[27 ]
+  img[28 ] img[29 ] img[30 ] ... img[55 ]
+  ...
+  img[756] img[757] img[758] ... img[783]
+
+  Discrete rasterisation, for each 0 <= i <= 783
+  img[i] = 0 or img[i] = 255
+  4 pix gap on either side vertically and horizontally
+  => rasterisation of strokes into a 20x20 grid
+  * don't scale the image - risks distortion
+ */
+int ceil_division(int x, int y) {
+  if (x % y == 0)
+    return x / y;
+  return x / y + 1;
+}
+uint8_t *to_img_data(const std::vector<Stroke> &strokes) {
+  uint8_t *output = (uint8_t *)malloc(sizeof(uint8_t) * 28 * 28);
+  if (output == NULL)
+    return NULL;
+  // calculate bounding box
+  int x1 = INT_MAX, y1 = INT_MAX, x2 = INT_MIN, y2 = INT_MIN;
+  for (auto stroke : strokes) {
+    for (auto point : stroke.points) {
+      if (x1 > point.x)
+        x1 = point.x;
+      if (y1 > point.y)
+        y1 = point.y;
+      if (x2 < point.x)
+        x2 = point.x;
+      if (y2 < point.y)
+        y2 = point.y;
+    }
+  }
+  int width = x2 - x1, height = y2 - y1;
+  // horizontal or vertical fit?
+  int grid_x1, grid_x2, grid_y1, grid_y2, cell_size;
+  if (width > height)
+    cell_size = ceil_division(width, 20);
+  else
+    cell_size = ceil_division(height, 20);
+  int mid_x = (x1 + x2) / 2, mid_y = (y1 + y2) / 2;
+  grid_x1 = mid_x - cell_size * 14;
+  grid_y1 = mid_y - cell_size * 14;
+  grid_x2 = mid_x + cell_size * 14;
+  grid_y2 = mid_y + cell_size * 14;
+
+  // resterization
+  //
+  return output;
+}
 
 struct Dir_entry {
   std::string name;
@@ -222,7 +279,10 @@ int main() {
     if (file_state == LOADED_SUCCESS) {
       ImGui::Text("Model loaded successfully!");
     } else if (file_state == ERROR) {
-      ImGui::Text("Error loading model from %s", model_filepath.c_str());
+      ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f),
+                         "Error loading model from %s", model_filepath.c_str());
+    } else if (file_state == NOT_LOADED) {
+      ImGui::Text("Select a file to load model parameters");
     }
     ImGui::End();
 
