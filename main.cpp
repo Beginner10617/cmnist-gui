@@ -45,7 +45,7 @@ int ceil_division(int x, int y) {
     return x / y;
   return x / y + 1;
 }
-uint8_t *to_img_data(std::vector<Stroke> strokes) {
+uint8_t *to_img_data(const std::vector<Stroke> &strokes) {
   // calculate bounding box
   int x1 = INT_MAX, y1 = INT_MAX, x2 = INT_MIN, y2 = INT_MIN;
   for (auto stroke : strokes) {
@@ -332,6 +332,7 @@ int main() {
     ImGui::Begin("Prediction", nullptr);
     if (file_state == LOADING) {
       freeMLP(mlp);
+      mlp = NULL;
       mlp = loadMLP(model_filepath.c_str());
       if (mlp)
         file_state = LOADED_SUCCESS;
@@ -381,9 +382,6 @@ int main() {
           free(mlp_output_data[i]);
         }
         free(mlp_output_data);
-        for (int i = 0; i < 28 * 28; i++)
-          free(mlp_input_data[i]);
-        free(mlp_input_data);
         display_prediciton = true;
       }
     }

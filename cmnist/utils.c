@@ -47,7 +47,7 @@ void freeMLP(MLP *mlp) {
       if (neuron->bias)
         free(neuron->bias);
       for (int k = 0; k < neuron->dimension; k++) {
-        Value *weight = neuron->weights[i];
+        Value *weight = neuron->weights[k];
         if (weight)
           free(weight);
       }
