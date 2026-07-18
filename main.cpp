@@ -247,7 +247,7 @@ int main() {
 
   // for frontend display
   float prediction[10];
-  bool display_prediciton = false;
+  bool display_prediction = false;
 
   // main-loop
   bool running = true;
@@ -347,10 +347,16 @@ int main() {
     } else if (file_state == NOT_LOADED) {
       ImGui::Text("Select a file to load model parameters");
     }
-    if (display_prediciton) {
-      // raw output display for now
+    if (display_prediction) {
       for (int i = 0; i < 10; i++) {
-        ImGui::Text("%d : %f", i, prediction[i]);
+        ImGui::Text("%d ", i);
+        ImGui::SameLine();
+        float prog = prediction[i];
+        if (prog > 1.0f)
+          prog = 1.0f;
+        else if (prog < -1.0f)
+          prog = -1.0f;
+        ImGui::ProgressBar(prog, ImVec2(100, 0.0f));
       }
     }
     ImGui::End();
@@ -382,7 +388,7 @@ int main() {
           free(mlp_output_data[i]);
         }
         free(mlp_output_data);
-        display_prediciton = true;
+        display_prediction = true;
       }
     }
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
